@@ -85,12 +85,6 @@ public class GameScreen implements Screen {
 		player = new Player();
 		currentTalkingNPC = new Gipsy(); // Initialize with a default NPC
         this.mapManager = new GameMapManager(player);
-
-        Main gameRef = (Main) Gdx.app.getApplicationListener();
-            if (gameRef.saveManager != null && gameRef.saveManager.hasCheckpoint()) {
-                gameRef.saveManager.loadCheckpoint(this, gameRef);
-        }
-
         this.hud = new HUD(player, game.font, mapManager.getCurrentMap());
         this.shapeRenderer = new ShapeRenderer();
 
