@@ -52,4 +52,14 @@ public class SaveManager {
 
         game.storyState.setCurrentRoute(RouteType.valueOf(route));
     }
+
+    public void clearCheckpoint() {
+        prefs.remove("mapIndex");
+        prefs.remove("playerX");
+        prefs.remove("playerY");
+        prefs.remove("hp");
+        prefs.remove("mp");
+        prefs.remove("route");
+        prefs.flush();
+    }
 }
