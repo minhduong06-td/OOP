@@ -2,6 +2,8 @@
 
 README này hướng dẫn cách tải project, kiểm tra Java, compile và chạy game để test.
 
+Đồng thời mn tải xuống chạy game hộ trợ test game xem còn chỗ nào có bugs, chỗ nào chưa hợp lý với logic game thì mn điền bugs và miêu tả bugs vào file Bugs.md có ở repo.
+
 ## 1. Tải project về máy
 
 ### Cách 1: Tải file ZIP từ GitHub
@@ -149,8 +151,51 @@ Nếu mọi thứ ổn, game sẽ mở cửa sổ và vào menu chính.
 
 ---
 
-Tree 
-```
+## 6. Debug mode 
+Project có hỗ trợ một số phím debug để giúp test game nhanh hơn mà không cần chơi lại từ đầu nhiều lần.
+Các phím này chỉ hoạt động khi file `DebugHotkeys.java` đang bật debug.
 
-```
+- **Bật debug:** `public static final boolean ENABLED = true;`
+- **Tắt debug:** `public static final boolean ENABLED = false;`
+
+---
+
+### ⌨️ Danh sách phím debug
+
+| Phím | Tên chức năng | Mục đích sử dụng | Tác dụng |
+| :---: | :--- | :--- | :--- |
+| **F1** | **Hồi đầy máu và mana** | Dùng để hồi lại nhân vật ngay lập tức khi đang test combat. | - Hồi đầy HP<br>- Hồi đầy MP |
+| **F2** | **Giết toàn bộ quái ở map hiện tại** | Dùng để test nhanh việc qua màn, mở cổng, hoặc kiểm tra ending mà không cần đánh từng con quái. | - Tất cả quái ở map hiện tại sẽ bị hạ ngay |
+| **F3** | **Dịch chuyển tới cổng của map hiện tại** | Dùng để test logic cổng, chuyển map, hoặc kiểm tra điều kiện mở cổng. | - Nhân vật được đưa ngay tới vị trí portal của map đang đứng |
+| **F4** | **Cấp đủ key fragments** | Dùng để test cổng khóa hoặc các màn cần chìa khóa / mảnh khóa. | - Thêm đủ các mảnh key vào inventory |
+| **F5** | **Chuyển ngay sang map kế tiếp** | Dùng để test nhanh nhiều map mà không cần tự đi qua từng màn. | - Nhảy sang map tiếp theo<br>- Đổi nhạc / trạng thái map tương ứng |
+| **F9** | **Ép route về NORMAL** | Dùng để test normal ending. | - Route hiện tại được set thành NORMAL |
+| **F10**| **Ép route về TRUE** | Dùng để test true ending mà không cần mở route thật bằng gameplay. | - Route hiện tại được set thành TRUE |
+| **F11**| **Ép route về OBSERVER** | Dùng để test observer ending mà không cần làm đủ các điều kiện đặc biệt. | - Route hiện tại được set thành OBSERVER |
+
+---
+
+### 💡 Cách test nhanh đề xuất
+
+#### 1. Test chuyển map nhanh
+* Vào game.
+* Bấm **F5** để nhảy sang map tiếp theo.
+* Nếu cần tới cổng nhanh, bấm **F3**.
+
+#### 2. Test cổng khóa / key
+* Vào map có cổng khóa.
+* Bấm **F4** để nhận đủ key fragments.
+* Đi tới cổng và kiểm tra logic mở cổng.
+
+#### 3. Test boss / ending
+* Dùng **F5** để tới nhanh map cần test.
+* Bấm **F2** để dọn quái hoặc giết boss nhanh.
+* **Trước khi kết thúc màn:**
+  * Bấm **F9** để test NORMAL.
+  * Bấm **F10** để test TRUE.
+  * Bấm **F11** để test OBSERVER.
+
+#### 4. Test sống / chết / combat
+* Để quái đánh thử nhân vật.
+* Khi cần hồi máu & mana nhanh, bấm **F1**.
 
