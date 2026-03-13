@@ -29,6 +29,7 @@ import com.paradise_seeker.game.screen.cutscene.EndMap1;
 import com.paradise_seeker.game.screen.cutscene.EndMap2;
 import com.paradise_seeker.game.screen.cutscene.EndMap3;
 import com.paradise_seeker.game.screen.cutscene.EndMap4;
+import com.paradise_seeker.game.screen.cutscene.IntroCutScene;
 import com.paradise_seeker.game.story.RouteType;
 import com.paradise_seeker.game.debug.DebugHotkeys;
 
@@ -184,8 +185,8 @@ public class GameScreen implements Screen {
 
 
 		// Handle NPC interaction
-    	if (this.currentTalkingNPC != null && this.currentTalkingNPC.stateManager.showDialogueOptions) {
-            player.inputHandler.handleDialogue(this, player);
+    	if (currentTalkingNPC != null && currentTalkingNPC.isChestOpenAndFinished()) {
+            player.inputHandler.finishNpcInteraction(this, player);
         }
         // Zoom logic
         player.inputHandler.handleZoomInput(this);
@@ -297,18 +298,28 @@ public class GameScreen implements Screen {
             }
 
             switch (mapManager.getCurrentMapIndex()) {
-				case 0: // Map 1 to Map 2
-					if (mapcutsceneIndicesEnd[0] == 0) {
-						mapcutsceneIndicesEnd[0] = 1; // Set cutscene index for Map 1 to Map 2
-					    game.setScreen(new EndMap1(game));
-					}
-					break;
-				case 1: // Map 2 to Map 3
-					if (mapcutsceneIndicesEnd[1] == 0) {
-						mapcutsceneIndicesEnd[1] = 1; // Set cutscene index for Map 2 to Map 3
-					    game.setScreen(new EndMap2(game));
-					}
-					break;
+				case 0:
+                    game.saveManager.clearCheckpoint();
+                    game.storyState.resetFlags();
+                    game.storyState.setCurrentRoute(com.paradise_seeker.game.story.RouteType.NORMAL);
+
+                    game.currentGame = null;
+                    game.inventoryScreen = null;
+                    game.currentGame = new GameScreen(game);
+
+                    game.setScreen(new IntroCutScene(game));
+                    break;
+				case 1:
+                    game.currentGame = null;
+                    game.inventoryScreen = null;
+                    game.currentGame = new GameScreen(game);
+
+                    if (game.saveManager != null && game.saveManager.hasCheckpoint()) {
+                        game.saveManager.loadCheckpoint(game.currentGame, game);
+                    }
+
+                    game.setScreen(game.currentGame);
+                    break;
 				case 2: // Map 3 to Map 4
 					if (mapcutsceneIndicesEnd[2] == 0) {
 						mapcutsceneIndicesEnd[2] = 1; // Set cutscene index for Map 3 to Map 4
@@ -334,6 +345,10 @@ public class GameScreen implements Screen {
 		            }
 					break;
 			}
+
+            if (mapManager.getCurrentMapIndex() == 4) {
+                return;
+            }
 
             if (mapManager.getCurrentMapIndex() != 3 && mapManager.getCurrentMapIndex() != 4) {
 
@@ -374,6 +389,8 @@ public class GameScreen implements Screen {
             currentMap.getStartPortal().onCollision(player);
             mapManager.switchToPreviousMap();
             switchMusicAndShowMap();
+            game.saveManager.saveCheckpoint(this, game);
+            hud.showNotification("> Game Saved");
         }
     }
 
