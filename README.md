@@ -1,3 +1,4 @@
+```
 Paradise-Seeker/
 ├── assets/
 │   ├── audio/
@@ -150,3 +151,4 @@ Paradise-Seeker/
     ├── route-design.md
     ├── ending-design.md
     └── task-breakdown.md
+```
