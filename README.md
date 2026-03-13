@@ -175,7 +175,7 @@ Các phím này chỉ hoạt động khi file `DebugHotkeys.java` đang bật de
 
 ---
 
-### 💡 Cách test nhanh đề xuất
+### Cách test nhanh đề xuất
 
 #### 1. Test chuyển map nhanh
 * Vào game.
