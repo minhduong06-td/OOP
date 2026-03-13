@@ -2,7 +2,7 @@
 
 README này hướng dẫn cách tải project, kiểm tra Java, compile và chạy game để test.
 
-Đồng thời mn tải xuống chạy game hộ trợ test game xem còn chỗ nào có bugs, chỗ nào chưa hợp lý với logic game thì mn điền bugs và miêu tả bugs vào file Bugs.md có ở repo.
+Đồng thời mọi người khi chạy game thì hộ trợ test game xem còn chỗ nào có bugs, chỗ nào chưa hợp lý với logic game thì mọi người điền bugs và miêu tả bugs vào file Bugs.md có ở repo. Nếu có nhưng bugs như tự dưng đang chơi đến đoạn nào mà game tự tắt hãy vào terminal mà mọi người dùng để chạy lệnh ```.\gradlew.bat lwjgl3:run``` và chụp ảnh hoặc gửi logs failed vào file Bugs.md.
 
 ## 1. Tải project về máy
 
