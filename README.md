@@ -175,6 +175,8 @@ Các phím này chỉ hoạt động khi file `DebugHotkeys.java` đang bật de
 
 ---
 
+Vì 2 route True và OBSERVER chưa có nên mọi người chỉ cần test với route NORMAL
+
 ### Cách test nhanh đề xuất
 
 #### 1. Test chuyển map nhanh
