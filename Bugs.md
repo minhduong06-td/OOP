@@ -5,7 +5,8 @@ Test bugs
 - 
 
 ## 2. Phạm Văn An
-- 
+- Đi vào cổng map 1 không sang được map 2
+- không nói chuyện được với npc
 -
 
 ## 3. Hà Tiến Đạt
