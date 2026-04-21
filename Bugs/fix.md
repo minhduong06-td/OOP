@@ -172,7 +172,7 @@ Nếu không có logic gọi `handleDialogue(...)`, trạng thái này không đ
 
 ### 3.3. Cách sửa đã áp dụng
 
-Giải pháp theo hướng A là giữ nguyên kiến trúc hiện tại nhưng thêm đúng bước điều phối hội thoại vào `GameScreen.render()`.
+Giải pháp là giữ nguyên kiến trúc hiện tại nhưng thêm đúng bước điều phối hội thoại vào `GameScreen.render()`.
 
 #### 3.3.1. Dòng đã thêm
 
