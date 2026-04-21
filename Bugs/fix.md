@@ -181,3 +181,28 @@ game.setScreen(game.currentGame);
 - Chỉ phát cutscene cuối chapter một lần (`EndMap1`, `EndMap2`).
 - Sau đó chuyển map bằng `mapManager.switchToNextMap()` và lưu checkpoint mới.
 - Cách này đồng nhất với luồng map 3->4, 4->5, 5->ending nên không còn nhảy ngược intro/map cũ.
+# Báo cáo đổi tên danh sách thành viên ở màn hình chiến thắng
+
+## 1 Vị trí thay đổi
+
+Phần cần sửa nằm trong `core/src/main/java/com/paradise_seeker/game/screen/WinScreen.java`, tại mảng `members` dùng để hiển thị credit ở màn hình chiến thắng.
+
+## 2 Nội dung trước khi đổi tên
+
+```java
+String[] members = {
+    "Nguyen Hoang Hiep", "Le Thanh An", "Pham Yen Nhi",
+    "Bui Tuan Anh", "Nguyen Hoang Long", "Trinh Van Minh"
+};
+```
+- ![img.png](img.png)
+
+## 3 Nội dung sau khi đổi tên
+
+```java
+String[] members = {
+        "Nguyen Thanh Trung - 202417056", "Pham Van An - 202417226", "Pham Van An - 202416841",
+        "Ha Tien Dat - 202417231", "Tran Minh Duong - 202417234"
+};
+```
+-![img_1.png](img_1.png)
