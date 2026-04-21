@@ -29,7 +29,6 @@ import com.paradise_seeker.game.screen.cutscene.EndMap1;
 import com.paradise_seeker.game.screen.cutscene.EndMap2;
 import com.paradise_seeker.game.screen.cutscene.EndMap3;
 import com.paradise_seeker.game.screen.cutscene.EndMap4;
-import com.paradise_seeker.game.screen.cutscene.IntroCutScene;
 import com.paradise_seeker.game.story.RouteType;
 import com.paradise_seeker.game.debug.DebugHotkeys;
 
@@ -124,7 +123,7 @@ public class GameScreen implements Screen {
     	music.play();
     	hud.showMapNotification(mapManager.getCurrentMap().getMapName());
 	}
-    
+
 
     private Gipsy findNearestNPC() {
         Gipsy nearest = null;
@@ -299,26 +298,18 @@ public class GameScreen implements Screen {
 
             switch (mapManager.getCurrentMapIndex()) {
 				case 0:
-                    game.saveManager.clearCheckpoint();
-                    game.storyState.resetFlags();
-                    game.storyState.setCurrentRoute(com.paradise_seeker.game.story.RouteType.NORMAL);
-
-                    game.currentGame = null;
-                    game.inventoryScreen = null;
-                    game.currentGame = new GameScreen(game);
-
-                    game.setScreen(new IntroCutScene(game));
+                        // Map 1 -> Map 2: giữ nguyên currentGame để không reset state/checkpoint.
+                        if (mapcutsceneIndicesEnd[0] == 0) {
+                            mapcutsceneIndicesEnd[0] = 1;
+                            game.setScreen(new EndMap1(game));
+                        }
                     break;
 				case 1:
-                    game.currentGame = null;
-                    game.inventoryScreen = null;
-                    game.currentGame = new GameScreen(game);
-
-                    if (game.saveManager != null && game.saveManager.hasCheckpoint()) {
-                        game.saveManager.loadCheckpoint(game.currentGame, game);
-                    }
-
-                    game.setScreen(game.currentGame);
+                        // Map 2 -> Map 3: chuyển liền mạch như các map sau, không load checkpoint ngay khi chạm portal.
+                        if (mapcutsceneIndicesEnd[1] == 0) {
+                            mapcutsceneIndicesEnd[1] = 1;
+                            game.setScreen(new EndMap2(game));
+                        }
                     break;
 				case 2: // Map 3 to Map 4
 					if (mapcutsceneIndicesEnd[2] == 0) {
