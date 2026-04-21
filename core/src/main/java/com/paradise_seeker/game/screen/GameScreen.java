@@ -181,6 +181,7 @@ public class GameScreen implements Screen {
         if (nearestNPC != null) {
             currentTalkingNPC = nearestNPC;
         }
+        player.inputHandler.handleDialogue(this, player);
 
 
 		// Handle NPC interaction

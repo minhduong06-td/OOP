@@ -1,32 +1,54 @@
-# Fix lỗi chuyển map 1 -> 2 và 2 -> 3
+# Báo cáo chi tiết các lỗi đã sửa
 
-## 1) Hiện tượng lỗi
+## 1. Mục đích tài liệu
 
-Theo ghi nhận trong `Bugs/Bugs.md`:
+Tài liệu này tổng hợp lại các lỗi đã được ghi nhận trong `Bugs/Bugs.md`, nguyên nhân kỹ thuật gây lỗi, cách sửa đã áp dụng trong mã nguồn và kết quả mong đợi sau khi sửa.
 
-- Vào cổng dịch chuyển của map 1 thì quay về luồng mở đầu game, không sang map 2 đúng cách.
-- Cổng dịch chuyển map 2 không qua được map 3, có lúc quay lại map hiện tại/cũ.
+Các nội dung được trình bày theo từng bug để dễ theo dõi và đối chiếu với mã nguồn:
 
-## 2) Nguyên nhân kỹ thuật
+1. Lỗi chuyển map từ `Map 1 -> Map 2` và `Map 2 -> Map 3`
+2. Lỗi sau khi nhấn `F` để nói chuyện với NPC thì màn hình bị đơ
+3. Lỗi đổi tên danh sách thành viên ở màn hình chiến thắng
 
-Vấn đề nằm trong `handlePortalsEvent()` của `core/src/main/java/com/paradise_seeker/game/screen/GameScreen.java`.
+---
 
-### Trước khi sửa
+## 2. Lỗi chuyển map từ Map 1 -> Map 2 và Map 2 -> Map 3
 
-- Ở `case 0` (map 1 -> 2), code cũ **xóa checkpoint + reset story + tạo mới `GameScreen` + mở `IntroCutScene`**.
-- Ở `case 1` (map 2 -> 3), code cũ **tạo mới `GameScreen` + load checkpoint ngay khi chạm cổng**.
+### 2.1. Hiện tượng lỗi
 
-Hai việc này làm luồng portal bị phá:
+Theo ghi nhận ban đầu:
 
-1. Chạm cổng nhưng lại chạy như "New Game" (đặc biệt ở map 1).
-2. Vừa chạm cổng đã nạp checkpoint cũ, nên vị trí/map có thể bị kéo ngược.
-3. Mất tính liên tục state hiện tại vì khởi tạo `GameScreen` mới giữa lúc chuyển map.
+- Khi người chơi đi vào cổng dịch chuyển của Map 1, game không sang Map 2 đúng cách mà bị quay trở lại luồng mở đầu game.
+- Khi đi qua cổng dịch chuyển của Map 2, game không chuyển ổn định sang Map 3 mà có lúc quay ngược về trạng thái cũ hoặc vẫn ở map hiện tại.
 
-## 3) Đã sửa như thế nào
+Hiện tượng này làm trải nghiệm chuyển chapter bị đứt đoạn, không đồng nhất với các map sau.
 
-### 3.1 Các dòng đã xóa
+### 2.2. Nguyên nhân kỹ thuật
 
-#### A. Xóa trong `case 0` (map 1 -> 2)
+Lỗi nằm trong logic xử lý portal của `core/src/main/java/com/paradise_seeker/game/screen/GameScreen.java`, cụ thể ở hàm `handlePortalsEvent()`.
+
+#### 2.2.1. Nguyên nhân ở Map 1 -> Map 2
+
+Code cũ không chỉ chuyển map mà còn thực hiện thêm các hành động thuộc luồng `New Game`:
+
+- xóa checkpoint đang lưu
+- reset toàn bộ trạng thái cốt truyện
+- tạo mới lại `GameScreen`
+- mở lại `IntroCutScene`
+
+Điều này khiến portal của Map 1 vô tình hoạt động như nút khởi động lại game, thay vì chỉ là bước chuyển chapter.
+
+#### 2.2.2. Nguyên nhân ở Map 2 -> Map 3
+
+Ở nhánh này, code cũ lại tạo mới `GameScreen` và load checkpoint ngay khi vừa chạm cổng.
+
+Hành vi này dễ kéo người chơi về lại dữ liệu cũ, vì checkpoint có thể đang lưu trạng thái map trước đó, vị trí cũ hoặc trạng thái chưa đồng bộ. Kết quả là game không giữ được tính liên tục của phiên chơi.
+
+### 2.3. Cách sửa đã áp dụng
+
+Giải pháp là bỏ các thao tác mang tính “khởi động lại game” ra khỏi logic portal và thay bằng luồng chuyển chapter thống nhất với các map sau.
+
+#### 2.3.1. Các dòng đã xóa trong nhánh Map 1 -> Map 2
 
 ```java
 game.saveManager.clearCheckpoint();
@@ -40,7 +62,14 @@ game.currentGame = new GameScreen(game);
 game.setScreen(new IntroCutScene(game));
 ```
 
-#### B. Xóa trong `case 1` (map 2 -> 3)
+Ý nghĩa của phần bị xóa:
+
+- `clearCheckpoint()` xóa toàn bộ dữ liệu lưu tạm, giống hành vi bắt đầu game mới.
+- `resetFlags()` và ép route về `NORMAL` làm mất trạng thái cốt truyện hiện tại.
+- Tạo lại `GameScreen` khiến runtime state bị thay thế giữa lúc chuyển map.
+- `IntroCutScene` làm người chơi bị quay về đầu game thay vì sang chapter tiếp theo.
+
+#### 2.3.2. Các dòng đã xóa trong nhánh Map 2 -> Map 3
 
 ```java
 game.currentGame = null;
@@ -54,15 +83,15 @@ if (game.saveManager != null && game.saveManager.hasCheckpoint()) {
 game.setScreen(game.currentGame);
 ```
 
-#### C. Xóa import không còn dùng
+Ý nghĩa của phần bị xóa:
 
-```java
-import com.paradise_seeker.game.screen.cutscene.IntroCutScene;
-```
+- Khởi tạo màn chơi mới ngay khi chạm portal làm mất continuity của màn hiện tại.
+- `loadCheckpoint()` tại thời điểm này dễ nạp lại dữ liệu map cũ, gây cảm giác game bị quay ngược.
+- `setScreen(game.currentGame)` khi đi kèm với việc tạo lại màn hình làm luồng chuyển map không còn liền mạch.
 
-### 3.2 Các dòng đã thêm
+#### 2.3.3. Các dòng đã thêm
 
-#### A. Thêm trong `case 0` (map 1 -> 2)
+Ở cả hai nhánh portal, logic được thay bằng cutscene chuyển chapter:
 
 ```java
 if (mapcutsceneIndicesEnd[0] == 0) {
@@ -71,8 +100,6 @@ if (mapcutsceneIndicesEnd[0] == 0) {
 }
 ```
 
-#### B. Thêm trong `case 1` (map 2 -> 3)
-
 ```java
 if (mapcutsceneIndicesEnd[1] == 0) {
     mapcutsceneIndicesEnd[1] = 1;
@@ -80,114 +107,122 @@ if (mapcutsceneIndicesEnd[1] == 0) {
 }
 ```
 
-## 4) Logic sau khi sửa
+Ý nghĩa:
 
-Portal map 1->2 và 2->3 giờ hoạt động cùng kiểu với các map sau:
+- Mỗi cutscene chỉ được phát một lần.
+- Portal không còn tự ý reset lại toàn bộ game state.
+- Sau cutscene, game tiếp tục chuyển map theo luồng hiện tại thay vì quay về intro hoặc load checkpoint cũ.
 
-1. Kiểm tra điều kiện qua cổng (đã dọn quái/boss/key).
-2. Nếu chưa phát cutscene chuyển chapter thì mở `EndMap1` hoặc `EndMap2` một lần.
-3. Tiếp tục luồng chuyển map tại chỗ:
-   - `mapManager.switchToNextMap();`
-   - `switchMusicAndShowMap();`
-   - `game.saveManager.saveCheckpoint(this, game);`
-4. Không tạo mới `GameScreen` trong lúc chạm cổng.
+### 2.4. Logic sau khi sửa
 
-## 5) Kết quả mong đợi
+Sau khi sửa, luồng portal hoạt động theo đúng mục đích:
 
-- Map 1 qua map 2 không còn quay về intro/start.
-- Map 2 qua map 3 không còn bị load ngược checkpoint cũ.
-- Trải nghiệm chuyển map mượt và đồng nhất với map 3->4, 4->5, 5->kết game.
+1. Kiểm tra điều kiện để được qua cổng.
+2. Nếu đây là lần đầu đi qua chapter đó thì mở cutscene `EndMap1` hoặc `EndMap2`.
+3. Tiếp tục chuyển map bằng logic hiện tại của game.
+4. Lưu checkpoint mới sau khi map đã được chuyển ổn định.
 
-## 6) Ghi chú
+### 2.5. Kết quả mong đợi
 
-- Việc reset route/checkpoint phù hợp hơn khi bấm `New Game` ở `MainMenuScreen`, không nên đặt trong logic portal.
-- Nếu còn hiện tượng "đụng cổng bị giật/lặp", có thể bổ sung thêm cooldown portal (debounce) để chặn trigger liên tiếp theo frame.
+- Map 1 sang Map 2 không còn quay về màn hình mở đầu.
+- Map 2 sang Map 3 không còn bị load ngược trạng thái cũ.
+- Cách chuyển map đồng nhất với các đoạn sau như Map 3 -> Map 4, Map 4 -> Map 5 và Map 5 -> kết game.
 
-## 7) Giải thích logic cũ: vì sao nhìn đúng nhưng vẫn lỗi
+### 2.6. Ghi chú thêm về ý nghĩa của logic cũ
 
-### 7.1 Mục tiêu mà người viết cũ có thể đang nghĩ tới
+Logic cũ không sai về mặt cú pháp. Vấn đề là nó đang đặt đúng hành động nhưng sai bối cảnh:
 
-- Khi người chơi chạm portal, hệ thống sẽ "đảm bảo trạng thái sạch" rồi mới vào map kế.
-- Nếu có checkpoint thì nạp lại để tránh mất dữ liệu.
-- Nếu cần thì mở lại intro/cutscene để giữ mạch truyện.
+- `clearCheckpoint()` phù hợp cho `New Game`, không phù hợp cho portal.
+- `loadCheckpoint()` phù hợp cho `Continue`, không phù hợp khi vừa bước qua cổng.
+- `IntroCutScene` phù hợp cho mở đầu game, không phù hợp cho chuyển chapter.
 
-Ý tưởng này **không sai về mặt ý định**, nhưng bị đặt vào **sai ngữ cảnh** (portal transition trong lúc đang chơi).
+Nói cách khác, lỗi nằm ở việc gộp nhầm 3 luồng khác nhau vào cùng một chỗ xử lý portal.
 
-### 7.2 Ý nghĩa từng cụm dòng đã xóa ở `case 0` (map 1 -> 2)
+---
 
-```java
-game.saveManager.clearCheckpoint();
-```
-- Xóa checkpoint đang có trong Preferences (`mapIndex`, `playerX`, `playerY`, `hp`, `mp`, `route`).
-- Hành vi này giống "khởi động game mới", không phải hành vi "qua map kế".
+## 3. Lỗi nhấn F để nói chuyện với NPC thì màn hình bị đơ
 
-```java
-game.storyState.resetFlags();
-game.storyState.setCurrentRoute(com.paradise_seeker.game.story.RouteType.NORMAL);
-```
-- Xóa toàn bộ cờ truyện và ép route về `NORMAL`.
-- Điều này làm mất liên tục trạng thái cốt truyện khi người chơi chỉ đang đi từ map 1 sang map 2.
+### 3.1. Hiện tượng lỗi
 
-```java
-game.currentGame = null;
-game.inventoryScreen = null;
-game.currentGame = new GameScreen(game);
-```
-- Hủy màn chơi hiện tại rồi tạo `GameScreen` mới hoàn toàn.
-- Toàn bộ runtime state của màn cũ (map manager hiện tại, tham chiếu object theo frame, trạng thái tức thời) bị thay thế.
+Trong quá trình chơi, khi người chơi nhấn `F` để nói chuyện với NPC, màn hình có thể bị đứng lại hoặc cảm giác như bị khóa điều khiển.
 
-```java
-game.setScreen(new IntroCutScene(game));
-```
-- Chuyển sang intro mở đầu game.
-- Đây là lý do trực tiếp khiến người chơi có cảm giác "đi portal map 1 nhưng quay về Start/Intro".
+Lỗi này được ghi nhận trên nhiều map, không chỉ một map riêng lẻ.
 
-### 7.3 Ý nghĩa từng cụm dòng đã xóa ở `case 1` (map 2 -> 3)
+### 3.2. Nguyên nhân kỹ thuật
 
-```java
-game.currentGame = null;
-game.inventoryScreen = null;
-game.currentGame = new GameScreen(game);
-```
-- Tương tự `case 0`: phá continuity bằng cách tạo màn chơi mới ngay lúc chạm portal.
+Nguyên nhân nằm ở luồng xử lý tương tác NPC trong `core/src/main/java/com/paradise_seeker/game/entity/player/input/PlayerInputHandlerManager.java`.
 
-```java
-if (game.saveManager != null && game.saveManager.hasCheckpoint()) {
-    game.saveManager.loadCheckpoint(game.currentGame, game);
-}
-```
-- Nạp checkpoint ngay tại thời điểm portal vừa trigger.
-- Nếu checkpoint lưu map cũ (thường là map 2 hoặc vị trí trước đó), người chơi sẽ bị kéo ngược trạng thái nên trông như "không qua map 3".
+#### 3.2.1. Vấn đề chính
+
+Hàm `handleNPCInteraction(...)` chỉ làm nhiệm vụ:
+
+- tìm NPC gần nhất
+- bật trạng thái nói chuyện
+- bật cờ `showDialogueOptions`
+
+Nhưng phần xử lý tiếp theo của hội thoại lại nằm trong `handleDialogue(...)`.
+
+Trước khi sửa, `handleDialogue(...)` không được gọi đúng thời điểm trong vòng lặp render của game. Điều này khiến NPC đã vào trạng thái thoại nhưng không có bước tiến hội thoại, dẫn đến cảm giác game bị treo.
+
+#### 3.2.2. Tác động của trạng thái thoại
+
+Khi `showDialogueOptions` bật lên, `GameScreen.render()` sẽ rơi vào nhánh trạng thái thoại và không còn xử lý gameplay bình thường như trước.
+
+Nếu không có logic gọi `handleDialogue(...)`, trạng thái này không được thoát ra, nên người chơi thấy màn hình đứng im.
+
+### 3.3. Cách sửa đã áp dụng
+
+Giải pháp theo hướng A là giữ nguyên kiến trúc hiện tại nhưng thêm đúng bước điều phối hội thoại vào `GameScreen.render()`.
+
+#### 3.3.1. Dòng đã thêm
+
+Trong `core/src/main/java/com/paradise_seeker/game/screen/GameScreen.java`, sau khi tìm NPC gần nhất, thêm:
 
 ```java
-game.setScreen(game.currentGame);
+player.inputHandler.handleDialogue(this, player);
 ```
-- Chuyển màn hình sang instance vừa tạo và vừa load checkpoint.
-- Về thực chất đang ưu tiên "phục hồi save" thay vì "tiếp tục luồng chuyển map hiện tại".
 
-### 7.4 Điểm mấu chốt gây lỗi
+Ý nghĩa của thay đổi này:
 
-- Các lệnh cũ **đúng cú pháp**, và từng lệnh riêng lẻ đều có lý do tồn tại.
-- Nhưng chúng thuộc nhóm logic của:
-  - `New Game` (xóa save/reset story/tạo game mới), hoặc
-  - `Continue` (load checkpoint).
-- Trong khi portal cần nhóm logic khác: **chuyển map liền mạch trong cùng phiên chơi**.
+- Khi người chơi nhấn `F`, game không chỉ bật trạng thái bắt đầu nói chuyện mà còn gọi tiếp luồng xử lý thoại.
+- Các bước hiển thị dòng đầu, chuyển sang dòng tiếp theo và kết thúc hội thoại sẽ được chạy đúng thời điểm.
+- Sau khi thoại kết thúc, NPC có thể mở rương và giải phóng trạng thái cho gameplay bình thường.
 
-=> Sai không phải ở câu lệnh đơn lẻ, mà sai ở **đúng việc nhưng đặt sai chỗ**.
+### 3.4. Logic sau khi sửa
 
-### 7.5 Vì sao logic mới ổn định hơn
+Luồng tương tác NPC giờ sẽ đi theo thứ tự:
 
-- Giữ nguyên `GameScreen` hiện tại.
-- Chỉ phát cutscene cuối chapter một lần (`EndMap1`, `EndMap2`).
-- Sau đó chuyển map bằng `mapManager.switchToNextMap()` và lưu checkpoint mới.
-- Cách này đồng nhất với luồng map 3->4, 4->5, 5->ending nên không còn nhảy ngược intro/map cũ.
-# Báo cáo đổi tên danh sách thành viên ở màn hình chiến thắng
+1. Người chơi đứng gần NPC.
+2. HUD hiển thị gợi ý nhấn `F`.
+3. Người chơi nhấn `F`.
+4. NPC được đưa vào trạng thái nói chuyện.
+5. `handleDialogue(...)` được gọi để:
+   - hiện dòng thoại đầu,
+   - chuyển dòng tiếp theo,
+   - kết thúc hội thoại.
+6. NPC thoát khỏi trạng thái thoại, không còn khóa màn hình.
 
-## 1 Vị trí thay đổi
+### 3.5. Kết quả mong đợi
 
-Phần cần sửa nằm trong `core/src/main/java/com/paradise_seeker/game/screen/WinScreen.java`, tại mảng `members` dùng để hiển thị credit ở màn hình chiến thắng.
+- Không còn tình trạng bấm `F` rồi đứng hình.
+- Hội thoại NPC được chạy tuần tự và có điểm kết thúc rõ ràng.
+- Logic tương tác giữa NPC, rương và thoại không còn bị kẹt ở trạng thái trung gian.
+![img_2.png](img_2.png)
+### 3.6. Ghi chú kỹ thuật
 
-## 2 Nội dung trước khi đổi tên
+Bug này không phải do phím `F` hỏng, mà do phím `F` đang dùng chung cho nhiều loại tương tác. Vì vậy, điều quan trọng là phải có đúng bộ điều phối trạng thái cho từng ngữ cảnh.
+
+Nếu sau này cần tối ưu thêm, có thể tiếp tục chuẩn hóa `interactionType` trong `InteractionState` để phân biệt rõ đang tương tác với NPC, sách hay rương.
+
+---
+
+## 4. Lỗi đổi tên danh sách thành viên ở màn hình chiến thắng
+
+### 4.1. Vị trí sửa
+
+Phần này nằm trong `core/src/main/java/com/paradise_seeker/game/screen/WinScreen.java`, tại mảng `members` dùng để hiển thị tên thành viên ở màn hình chiến thắng.
+
+### 4.2. Nội dung trước khi đổi tên
 
 ```java
 String[] members = {
@@ -195,14 +230,39 @@ String[] members = {
     "Bui Tuan Anh", "Nguyen Hoang Long", "Trinh Van Minh"
 };
 ```
-- ![img.png](img.png)
-
-## 3 Nội dung sau khi đổi tên
+![img.png](img.png)
+### 4.3. Nội dung sau khi đổi tên
 
 ```java
 String[] members = {
-        "Nguyen Thanh Trung - 202417056", "Pham Van An - 202417226", "Pham Van An - 202416841",
-        "Ha Tien Dat - 202417231", "Tran Minh Duong - 202417234"
+    "Nguyen Thanh Trung - 202417056", "Pham Van An - 202417226", "Pham Van An - 202416841",
+    "Ha Tien Dat - 202417231", "Tran Minh Duong - 202417234"
 };
 ```
--![img_1.png](img_1.png)
+![img_1.png](img_1.png)
+### 4.4. Mục đích của thay đổi
+
+- Cập nhật đúng danh sách thành viên theo yêu cầu báo cáo.
+- Hiển thị thông tin rõ ràng hơn trên màn hình chiến thắng.
+- Giữ nội dung credit đồng bộ với thông tin thực tế của nhóm.
+
+### 4.5. Kết quả mong đợi
+
+- Màn hình chiến thắng hiển thị đúng tên và mã số sinh viên đã cập nhật.
+- Nội dung credit nhất quán với báo cáo và thông tin nhóm.
+
+---
+
+## 5. Kết luận
+
+Sau khi sửa, các lỗi chính của game đã được xử lý theo hướng ổn định hơn:
+
+- Chuyển map không còn nhảy về intro hoặc load ngược checkpoint cũ.
+- Nhấn `F` để nói chuyện với NPC không còn làm màn hình bị đơ.
+- Danh sách thành viên ở màn hình chiến thắng đã được cập nhật đúng yêu cầu.
+
+Tổng thể, các thay đổi này giúp luồng chơi mượt hơn, trạng thái game rõ ràng hơn và giảm nguy cơ xung đột giữa các chức năng dùng chung phím `F`.
+
+---
+
+*Cập nhật: 21/04/2026*
