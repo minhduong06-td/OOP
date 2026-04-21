@@ -1,4 +1,4 @@
-# Báo cáo chi tiết các lỗi đã sửa
+# Báo cáo chi tiết các lỗi đã sửa (Nguyễn Thành Trung)
 
 ## 1. Mục đích tài liệu
 
@@ -8,7 +8,7 @@ Các nội dung được trình bày theo từng bug để dễ theo dõi và đ
 
 1. Lỗi chuyển map từ `Map 1 -> Map 2` và `Map 2 -> Map 3`
 2. Lỗi sau khi nhấn `F` để nói chuyện với NPC thì màn hình bị đơ
-3. Lỗi đổi tên danh sách thành viên ở màn hình chiến thắng
+3. Lỗi tên danh sách thành viên ở màn hình chiến thắng
 
 ---
 
@@ -222,16 +222,7 @@ Nếu sau này cần tối ưu thêm, có thể tiếp tục chuẩn hóa `inter
 
 Phần này nằm trong `core/src/main/java/com/paradise_seeker/game/screen/WinScreen.java`, tại mảng `members` dùng để hiển thị tên thành viên ở màn hình chiến thắng.
 
-### 4.2. Nội dung trước khi đổi tên
-
-```java
-String[] members = {
-    "Nguyen Hoang Hiep", "Le Thanh An", "Pham Yen Nhi",
-    "Bui Tuan Anh", "Nguyen Hoang Long", "Trinh Van Minh"
-};
-```
-![img.png](img.png)
-### 4.3. Nội dung sau khi đổi tên
+### 4.2. Nội dung sau khi đổi tên
 
 ```java
 String[] members = {
@@ -239,18 +230,17 @@ String[] members = {
     "Ha Tien Dat - 202417231", "Tran Minh Duong - 202417234"
 };
 ```
-![img_1.png](img_1.png)
-### 4.4. Mục đích của thay đổi
+
+### 4.3. Mục đích của thay đổi
 
 - Cập nhật đúng danh sách thành viên theo yêu cầu báo cáo.
 - Hiển thị thông tin rõ ràng hơn trên màn hình chiến thắng.
-- Giữ nội dung credit đồng bộ với thông tin thực tế của nhóm.
 
-### 4.5. Kết quả mong đợi
+### 4.4. Kết quả mong đợi
 
 - Màn hình chiến thắng hiển thị đúng tên và mã số sinh viên đã cập nhật.
-- Nội dung credit nhất quán với báo cáo và thông tin nhóm.
 
+-![img_1.png](img_1.png)
 ---
 
 ## 5. Kết luận
