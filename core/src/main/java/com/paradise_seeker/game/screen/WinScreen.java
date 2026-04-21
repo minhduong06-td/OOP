@@ -104,8 +104,8 @@ public class WinScreen implements Screen {
         font.draw(batch, credit, creditX, 210);
 
         String[] members = {
-            "Nguyen Hoang Hiep", "Le Thanh An", "Pham Yen Nhi",
-            "Bui Tuan Anh", "Nguyen Hoang Long", "Trinh Van Minh"
+            "Nguyen Thanh Trung - 202417056", "Pham Van An - 202417226", "Pham Van An - 202416841",
+            "Ha Tien Dat - 202417231", "Tran Minh Duong - 202417234"
         };
 
         for (int i = 0; i < members.length; i++) {
