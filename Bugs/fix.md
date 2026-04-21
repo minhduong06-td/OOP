@@ -103,3 +103,81 @@ Portal map 1->2 và 2->3 giờ hoạt động cùng kiểu với các map sau:
 - Việc reset route/checkpoint phù hợp hơn khi bấm `New Game` ở `MainMenuScreen`, không nên đặt trong logic portal.
 - Nếu còn hiện tượng "đụng cổng bị giật/lặp", có thể bổ sung thêm cooldown portal (debounce) để chặn trigger liên tiếp theo frame.
 
+## 7) Giải thích logic cũ: vì sao nhìn đúng nhưng vẫn lỗi
+
+### 7.1 Mục tiêu mà người viết cũ có thể đang nghĩ tới
+
+- Khi người chơi chạm portal, hệ thống sẽ "đảm bảo trạng thái sạch" rồi mới vào map kế.
+- Nếu có checkpoint thì nạp lại để tránh mất dữ liệu.
+- Nếu cần thì mở lại intro/cutscene để giữ mạch truyện.
+
+Ý tưởng này **không sai về mặt ý định**, nhưng bị đặt vào **sai ngữ cảnh** (portal transition trong lúc đang chơi).
+
+### 7.2 Ý nghĩa từng cụm dòng đã xóa ở `case 0` (map 1 -> 2)
+
+```java
+game.saveManager.clearCheckpoint();
+```
+- Xóa checkpoint đang có trong Preferences (`mapIndex`, `playerX`, `playerY`, `hp`, `mp`, `route`).
+- Hành vi này giống "khởi động game mới", không phải hành vi "qua map kế".
+
+```java
+game.storyState.resetFlags();
+game.storyState.setCurrentRoute(com.paradise_seeker.game.story.RouteType.NORMAL);
+```
+- Xóa toàn bộ cờ truyện và ép route về `NORMAL`.
+- Điều này làm mất liên tục trạng thái cốt truyện khi người chơi chỉ đang đi từ map 1 sang map 2.
+
+```java
+game.currentGame = null;
+game.inventoryScreen = null;
+game.currentGame = new GameScreen(game);
+```
+- Hủy màn chơi hiện tại rồi tạo `GameScreen` mới hoàn toàn.
+- Toàn bộ runtime state của màn cũ (map manager hiện tại, tham chiếu object theo frame, trạng thái tức thời) bị thay thế.
+
+```java
+game.setScreen(new IntroCutScene(game));
+```
+- Chuyển sang intro mở đầu game.
+- Đây là lý do trực tiếp khiến người chơi có cảm giác "đi portal map 1 nhưng quay về Start/Intro".
+
+### 7.3 Ý nghĩa từng cụm dòng đã xóa ở `case 1` (map 2 -> 3)
+
+```java
+game.currentGame = null;
+game.inventoryScreen = null;
+game.currentGame = new GameScreen(game);
+```
+- Tương tự `case 0`: phá continuity bằng cách tạo màn chơi mới ngay lúc chạm portal.
+
+```java
+if (game.saveManager != null && game.saveManager.hasCheckpoint()) {
+    game.saveManager.loadCheckpoint(game.currentGame, game);
+}
+```
+- Nạp checkpoint ngay tại thời điểm portal vừa trigger.
+- Nếu checkpoint lưu map cũ (thường là map 2 hoặc vị trí trước đó), người chơi sẽ bị kéo ngược trạng thái nên trông như "không qua map 3".
+
+```java
+game.setScreen(game.currentGame);
+```
+- Chuyển màn hình sang instance vừa tạo và vừa load checkpoint.
+- Về thực chất đang ưu tiên "phục hồi save" thay vì "tiếp tục luồng chuyển map hiện tại".
+
+### 7.4 Điểm mấu chốt gây lỗi
+
+- Các lệnh cũ **đúng cú pháp**, và từng lệnh riêng lẻ đều có lý do tồn tại.
+- Nhưng chúng thuộc nhóm logic của:
+  - `New Game` (xóa save/reset story/tạo game mới), hoặc
+  - `Continue` (load checkpoint).
+- Trong khi portal cần nhóm logic khác: **chuyển map liền mạch trong cùng phiên chơi**.
+
+=> Sai không phải ở câu lệnh đơn lẻ, mà sai ở **đúng việc nhưng đặt sai chỗ**.
+
+### 7.5 Vì sao logic mới ổn định hơn
+
+- Giữ nguyên `GameScreen` hiện tại.
+- Chỉ phát cutscene cuối chapter một lần (`EndMap1`, `EndMap2`).
+- Sau đó chuyển map bằng `mapManager.switchToNextMap()` và lưu checkpoint mới.
+- Cách này đồng nhất với luồng map 3->4, 4->5, 5->ending nên không còn nhảy ngược intro/map cũ.
